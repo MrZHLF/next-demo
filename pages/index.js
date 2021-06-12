@@ -1,10 +1,12 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
-
-export default function Home() {
+import {getFeaturedEvents} from './../dummy-data'
+import EventList from '../components/events/event-list'
+function Home() {
+  const featuredEvent = getFeaturedEvents()
   return (
-    <div className={styles.container}>
-      44444
+    <div>
+        <EventList items={featuredEvent}/>
     </div>
   )
 }
+
+export default Home
