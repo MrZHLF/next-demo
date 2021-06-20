@@ -1,16 +1,37 @@
 import { useRouter } from 'next/router'
-import { Fragment } from 'react'
-import {getFilteredEvents} from '../../dummy-data'
+import { Fragment,useState,useEffect } from 'react'
+
+import useSWR from 'swr'
+
+import {getFilteredEvents} from '../../helpers/api-utils'
 import EventList from '../../components/events/event-list'
 import ResultsTitle from '../../components/events/results-title'
 import Button from '../../components/ui/button'
 import ErrorAlert from '../../components/ui/error-alert'
 
-function FilteredEventPage() {
+function FilteredEventPage(props) {
+  const [list,setList] = useState()
   const router  = useRouter()
 
   const filterData = router.query.slug
-  if(!filterData) {
+
+
+  const {data,error} =  useSWR('https://nextjs-course-36511-default-rtdb.firebaseio.com/events.json')
+  useEffect(()=> {
+    if (data) {
+      const events = []
+      for (const key in data) {
+        events.push({
+          id: key,
+          ...data[key],
+        })
+      }
+      setList(events)
+    }
+  },[data])
+
+  
+  if(!list) {
     return <p className="center">页面加载中...</p>
   }
 
@@ -20,8 +41,8 @@ function FilteredEventPage() {
   const numYear = +filteredYear
   const numMonth = +filteredMonth
 
-  // 判断是否为有效年份
-  if (isNaN(numYear) || isNaN(numMonth) || numYear > 2022 || numYear < 2021 || numMonth > 12 || numMonth < 1) {
+   // 判断是否为有效年份
+   if (isNaN(numYear) || isNaN(numMonth) || numYear > 2022 || numYear < 2021 || numMonth > 12 || numMonth < 1) {
     return (
       <Fragment>
         <ErrorAlert>
@@ -34,10 +55,16 @@ function FilteredEventPage() {
     )
   }
 
-  const filteredEvents = getFilteredEvents({
-    year: numYear,
-    month: numMonth
+  const filteredEvents = list.filter((event) => {
+    const eventDate = new Date(event.date)
+    return (
+      eventDate.getFullYear() === numYear && eventDate.getMonth() === numMonth - 1
+    )
   })
+
+ 
+
+  // const filteredEvents = props.filteredEvents
 
   if(!filteredEvents || filteredEvents.length === 0) {
     return (
@@ -63,3 +90,41 @@ function FilteredEventPage() {
   }
   
   export default FilteredEventPage
+
+
+  // export async function getServerSideProps(context) {
+  //   const {params} = context
+  //   const filterData = params.slug
+
+  //   // 处理捕获的路由参数
+  //   const filteredYear = filterData[0]
+  //   const filteredMonth = filterData[1]
+
+  //   const numYear = +filteredYear
+  //   const numMonth = +filteredMonth
+
+  //   // 判断是否为有效年份
+  //   if (isNaN(numYear) || isNaN(numMonth) || numYear > 2022 || numYear < 2021 || numMonth > 12 || numMonth < 1) {
+  //     return {
+  //       props:{
+  //         hasError: true
+  //       }
+  //     }
+  //   }
+
+  //   const filteredEvents = await getFilteredEvents({
+  //     year: numYear,
+  //     month: numMonth
+  //   })
+
+  //   return {
+  //     props: {
+  //       filteredEvents: filteredEvents,
+  //       date: {
+  //         year: numYear,
+  //         month: numMonth
+  //       }
+  //     }
+  //   }
+
+  // }
